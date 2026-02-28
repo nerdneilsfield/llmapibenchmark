@@ -89,6 +89,46 @@ llmapibenchmark_windows_amd64.exe ^
   --format json
 ```
 
+### Using Custom Headers
+
+You can add custom HTTP headers to your requests using the `-H` or `--header` flag. The `{api_key}` placeholder will be replaced with your actual API key.
+
+**Custom Headers Example:**
+```bash
+./llmapibenchmark_linux_amd64 \
+  --base-url https://your-api-endpoint.com/v1 \
+  --api-key YOUR_API_KEY \
+  -H "User-Agent: MyApp/1.0" \
+  -H "X-Custom-Header: value" \
+  -H "Authorization: Bearer {api_key}"
+```
+
+**Using RooCode Preset:**
+```bash
+./llmapibenchmark_linux_amd64 \
+  --base-url https://your-api-endpoint.com/v1 \
+  --api-key YOUR_API_KEY \
+  --roocode
+```
+
+This is equivalent to:
+```bash
+./llmapibenchmark_linux_amd64 \
+  --base-url https://your-api-endpoint.com/v1 \
+  --api-key YOUR_API_KEY \
+  -H "User-Agent: RooCode/3.46.1" \
+  -H "Authorization: Bearer {api_key}"
+```
+
+You can also combine preset with additional custom headers:
+```bash
+./llmapibenchmark_linux_amd64 \
+  --base-url https://your-api-endpoint.com/v1 \
+  --api-key YOUR_API_KEY \
+  --roocode \
+  -H "X-Extra-Header: extra-value"
+```
+
 ## Command-Line Parameters
 
 | Parameter | Short | Description | Default | Required |
@@ -101,6 +141,8 @@ llmapibenchmark_windows_amd64.exe ^
 | `--num-words` | `-n` | Number of words for random input prompt | `0` | No |
 | `--prompt` | `-p` | Text prompt for generating responses | A long story | No |
 | `--format` | `-f` | Output format (json, yaml) | `""` | No |
+| `--header` | `-H` | Custom headers in 'Key:Value' format. Can be used multiple times. Use `{api_key}` placeholder for API key | None | No |
+| `--roocode` | | Use RooCode default headers (User-Agent: RooCode/3.46.1, Authorization: Bearer {api_key}) | `false` | No |
 | `--help` | `-h` | Show help message | `false` | No |
 
 ## Output

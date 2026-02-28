@@ -13,6 +13,7 @@ type Benchmark struct {
 	ConcurrencyLevels []int
 	UseRandomInput    bool
 	NumWords          int
+	Headers           map[string]string
 }
 
 type BenchmarkResult struct {

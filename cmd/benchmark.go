@@ -124,6 +124,7 @@ func (benchmark *Benchmark) measureSpeed(latency float64, concurrency int, clear
 		MaxTokens:   benchmark.MaxTokens,
 		Latency:     latency,
 		Concurrency: concurrency,
+		Headers:     benchmark.Headers,
 	}
 	if benchmark.UseRandomInput {
 		speedMeasurement.UseRandomInput = true

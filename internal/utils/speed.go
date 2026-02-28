@@ -2,7 +2,9 @@ package utils
 
 import (
 	"math"
+	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -12,6 +14,29 @@ import (
 	"github.com/sashabaranov/go-openai"
 	"github.com/schollz/progressbar/v3"
 )
+
+// HeaderTransport is a custom http.RoundTripper that adds custom headers to requests
+type HeaderTransport struct {
+	Base      http.RoundTripper
+	Headers   map[string]string
+	AuthToken string
+}
+
+func (t *HeaderTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Clone the request to avoid modifying the original
+	newReq := req.Clone(req.Context())
+	
+	// Add custom headers
+	for key, value := range t.Headers {
+		// Replace {api_key} placeholder with actual API key
+		if strings.Contains(value, "{api_key}") {
+			value = strings.ReplaceAll(value, "{api_key}", t.AuthToken)
+		}
+		newReq.Header.Set(key, value)
+	}
+	
+	return t.Base.RoundTrip(newReq)
+}
 
 type SpeedMeasurement struct {
 	BaseUrl        string
@@ -24,6 +49,7 @@ type SpeedMeasurement struct {
 	MaxTokens      int
 	Latency        float64
 	Concurrency    int
+	Headers        map[string]string
 }
 
 type SpeedResult struct {
@@ -86,6 +112,18 @@ func (setup *SpeedMeasurement) Run(bar *progressbar.ProgressBar) (SpeedResult, e
 	config := openai.DefaultConfig(setup.ApiKey)
 	config.BaseURL = setup.BaseUrl
 	config.APIVersion = setup.ApiVersion
+	
+	// Setup HTTP client with custom headers if specified
+	if len(setup.Headers) > 0 {
+		config.HTTPClient = &http.Client{
+			Transport: &HeaderTransport{
+				Base:      http.DefaultTransport,
+				Headers:   setup.Headers,
+				AuthToken: setup.ApiKey,
+			},
+		}
+	}
+	
 	client := openai.NewClientWithConfig(config)
 
 	var wg sync.WaitGroup

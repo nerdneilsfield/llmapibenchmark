@@ -6,12 +6,36 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Yoosu-L/llmapibenchmark/internal/api"
 	"github.com/Yoosu-L/llmapibenchmark/internal/utils"
 	"github.com/sashabaranov/go-openai"
 	"github.com/spf13/pflag"
 )
+
+// HeaderTransport is a custom http.RoundTripper that adds custom headers to requests
+type HeaderTransport struct {
+	Base      http.RoundTripper
+	Headers   map[string]string
+	AuthToken string
+}
+
+func (t *HeaderTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Clone the request to avoid modifying the original
+	newReq := req.Clone(req.Context())
+	
+	// Add custom headers
+	for key, value := range t.Headers {
+		// Replace {api_key} placeholder with actual API key
+		if strings.Contains(value, "{api_key}") {
+			value = strings.ReplaceAll(value, "{api_key}", t.AuthToken)
+		}
+		newReq.Header.Set(key, value)
+	}
+	
+	return t.Base.RoundTrip(newReq)
+}
 
 const (
 	defaultPrompt = "Write a long story, no less than 10,000 words, starting from a long, long time ago."
@@ -29,6 +53,14 @@ func main() {
 	format := pflag.StringP("format", "f", "", "Output format (optional)")
 	help := pflag.BoolP("help", "h", false, "Show this help message")
 	insecureSkipTLSVerify := pflag.Bool("insecure-skip-tls-verify", false, "Skip TLS certificate verification. Use with caution, this is insecure.")
+	
+	// Header flags
+	var headers []string
+	pflag.StringArrayVarP(&headers, "header", "H", nil, "Custom headers in 'Key:Value' format. Can be specified multiple times. Use {api_key} placeholder for the API key.")
+	
+	// Preset header flags
+	useRooCode := pflag.Bool("roocode", false, "Use RooCode headers (User-Agent: RooCode/3.46.1, Authorization: Bearer {api_key})")
+	
 	pflag.Parse()
 
 	if *help {
@@ -58,10 +90,34 @@ func main() {
 	if *baseURL == "" {
 		log.Fatalf("--base-url is required")
 	}
+
+	// Build headers map
+	benchmark.Headers = make(map[string]string)
+	
+	// Apply preset headers first (RooCode)
+	if *useRooCode {
+		benchmark.Headers["User-Agent"] = "RooCode/3.46.1"
+		benchmark.Headers["Authorization"] = "Bearer {api_key}"
+	}
+	
+	// Apply custom headers (they can override presets)
+	for _, header := range headers {
+		parts := strings.SplitN(header, ":", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			benchmark.Headers[key] = value
+		} else {
+			log.Printf("Warning: Invalid header format '%s', expected 'Key:Value'", header)
+		}
+	}
+
 	config := openai.DefaultConfig(*apiKey)
 	config.BaseURL = *baseURL
 	config.APIVersion = *apiVersion
 
+	// Setup HTTP client with custom headers
+	var baseTransport http.RoundTripper
 	if *insecureSkipTLSVerify {
 		fmt.Fprintln(os.Stderr, "\n/!\\ WARNING: Skipping TLS certificate verification. This is insecure and should not be used in production. /!\\")
 
@@ -72,8 +128,20 @@ func main() {
 		}
 		tr := defaultTransport.Clone()
 		tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-		config.HTTPClient = &http.Client{Transport: tr}
+		baseTransport = tr
+	} else {
+		baseTransport = http.DefaultTransport
 	}
+
+	// Wrap transport with custom headers if any are specified
+	if len(benchmark.Headers) > 0 {
+		baseTransport = &HeaderTransport{
+			Base:      baseTransport,
+			Headers:   benchmark.Headers,
+			AuthToken: *apiKey,
+		}
+	}
+	config.HTTPClient = &http.Client{Transport: baseTransport}
 
 	client := openai.NewClientWithConfig(config)
 
