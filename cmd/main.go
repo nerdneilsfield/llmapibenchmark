@@ -50,6 +50,7 @@ func main() {
 	numWords := pflag.IntP("num-words", "n", 0, "If set to a value above 0 a random string with this length will be used as prompt")
 	concurrencyStr := pflag.StringP("concurrency", "c", "1,2,4,8,16,32,64,128", "Comma-separated list of concurrency levels")
 	maxTokens := pflag.IntP("max-tokens", "t", 512, "Maximum number of tokens to generate")
+	useMaxCompletionTokens := pflag.Bool("use-max-completion-tokens", false, "Use MaxCompletionTokens instead of MaxTokens (for APIs that don't support both)")
 	format := pflag.StringP("format", "f", "", "Output format (optional)")
 	help := pflag.BoolP("help", "h", false, "Show this help message")
 	insecureSkipTLSVerify := pflag.Bool("insecure-skip-tls-verify", false, "Skip TLS certificate verification. Use with caution, this is insecure.")
@@ -78,6 +79,7 @@ func main() {
 	benchmark.Prompt = *prompt
 	benchmark.NumWords = *numWords
 	benchmark.MaxTokens = *maxTokens
+	benchmark.UseMaxCompletionTokens = *useMaxCompletionTokens
 
 	// Parse concurrency levels
 	concurrencyLevels, err := utils.ParseConcurrencyLevels(*concurrencyStr)
@@ -166,13 +168,13 @@ func main() {
 
 	// Get input tokens
 	if benchmark.UseRandomInput {
-		_, _, promptTokens, err := api.AskOpenAiRandomInput(client, benchmark.ModelName, *numWords/4, 4, nil)
+		_, _, promptTokens, err := api.AskOpenAiRandomInput(client, benchmark.ModelName, *numWords/4, 4, benchmark.UseMaxCompletionTokens, nil)
 		if err != nil {
 			log.Fatalf("Error getting prompt tokens: %v", err)
 		}
 		benchmark.InputTokens = promptTokens
 	} else {
-		_, _, promptTokens, err := api.AskOpenAi(client, benchmark.ModelName, *prompt, 4, nil)
+		_, _, promptTokens, err := api.AskOpenAi(client, benchmark.ModelName, *prompt, 4, benchmark.UseMaxCompletionTokens, nil)
 		if err != nil {
 			log.Fatalf("Error getting prompt tokens: %v", err)
 		}

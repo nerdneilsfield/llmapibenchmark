@@ -13,7 +13,7 @@ import (
 )
 
 // AskOpenAi sends a prompt to the OpenAI API, processes the response stream and returns stats on it.
-func AskOpenAi(client *openai.Client, model string, prompt string, maxTokens int, bar *progressbar.ProgressBar) (float64, int, int, error) {
+func AskOpenAi(client *openai.Client, model string, prompt string, maxTokens int, useMaxCompletionTokens bool, bar *progressbar.ProgressBar) (float64, int, int, error) {
 	start := time.Now()
 
 	var (
@@ -24,26 +24,27 @@ func AskOpenAi(client *openai.Client, model string, prompt string, maxTokens int
 		estimatedTokens    int    // Real-time token estimation
 	)
 
-	stream, err := client.CreateChatCompletionStream(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model: model,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: prompt,
-				},
-			},
-			// Add the deprecated `MaxTokens` for backward compatibility with some older API servers.
-			MaxTokens:           maxTokens,
-			MaxCompletionTokens: maxTokens,
-			Temperature:         1,
-			Stream:              true,
-			StreamOptions: &openai.StreamOptions{
-				IncludeUsage: true,
+	req := openai.ChatCompletionRequest{
+		Model: model,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: prompt,
 			},
 		},
-	)
+		Temperature: 1,
+		Stream:      true,
+		StreamOptions: &openai.StreamOptions{
+			IncludeUsage: true,
+		},
+	}
+	// Use either MaxTokens or MaxCompletionTokens based on the flag
+	if useMaxCompletionTokens {
+		req.MaxCompletionTokens = maxTokens
+	} else {
+		req.MaxTokens = maxTokens
+	}
+	stream, err := client.CreateChatCompletionStream(context.Background(), req)
 	if err != nil {
 		return 0, 0, 0, fmt.Errorf("OpenAI API request failed: %w", err)
 	}
@@ -107,9 +108,9 @@ func AskOpenAi(client *openai.Client, model string, prompt string, maxTokens int
 	return timeToFirstToken, completionTokens, promptTokens, nil
 }
 
-func AskOpenAiRandomInput(client *openai.Client, model string, numWords int, maxTokens int, bar *progressbar.ProgressBar) (float64, int, int, error) {
+func AskOpenAiRandomInput(client *openai.Client, model string, numWords int, maxTokens int, useMaxCompletionTokens bool, bar *progressbar.ProgressBar) (float64, int, int, error) {
 	prompt := generateRandomPhrase(numWords)
-	return AskOpenAi(client, model, prompt, maxTokens, bar)
+	return AskOpenAi(client, model, prompt, maxTokens, useMaxCompletionTokens, bar)
 }
 
 func estimateTokens(content string) int {

@@ -39,17 +39,18 @@ func (t *HeaderTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 type SpeedMeasurement struct {
-	BaseUrl        string
-	ApiVersion     string
-	ApiKey         string
-	ModelName      string
-	Prompt         string
-	UseRandomInput bool
-	NumWords       int
-	MaxTokens      int
-	Latency        float64
-	Concurrency    int
-	Headers        map[string]string
+	BaseUrl                string
+	ApiVersion             string
+	ApiKey                 string
+	ModelName              string
+	Prompt                 string
+	UseRandomInput         bool
+	NumWords               int
+	MaxTokens              int
+	Latency                float64
+	Concurrency            int
+	Headers                map[string]string
+	UseMaxCompletionTokens bool
 }
 
 type SpeedResult struct {
@@ -144,9 +145,9 @@ func (setup *SpeedMeasurement) Run(bar *progressbar.ProgressBar) (SpeedResult, e
 			var completionTokens, inputTokens int
 			var err error
 			if setup.UseRandomInput {
-				ttft, completionTokens, inputTokens, err = api.AskOpenAiRandomInput(client, setup.ModelName, setup.NumWords, setup.MaxTokens, bar)
+				ttft, completionTokens, inputTokens, err = api.AskOpenAiRandomInput(client, setup.ModelName, setup.NumWords, setup.MaxTokens, setup.UseMaxCompletionTokens, bar)
 			} else {
-				ttft, completionTokens, inputTokens, err = api.AskOpenAi(client, setup.ModelName, setup.Prompt, setup.MaxTokens, bar)
+				ttft, completionTokens, inputTokens, err = api.AskOpenAi(client, setup.ModelName, setup.Prompt, setup.MaxTokens, setup.UseMaxCompletionTokens, bar)
 			}
 			if err != nil {
 				failedRequests.Add(1)

@@ -3,17 +3,18 @@ package main
 import "github.com/Yoosu-L/llmapibenchmark/internal/utils"
 
 type Benchmark struct {
-	BaseURL           string
-	ApiVersion        string
-	ApiKey            string
-	ModelName         string
-	Prompt            string
-	InputTokens       int
-	MaxTokens         int
-	ConcurrencyLevels []int
-	UseRandomInput    bool
-	NumWords          int
-	Headers           map[string]string
+	BaseURL                string
+	ApiVersion             string
+	ApiKey                 string
+	ModelName              string
+	Prompt                 string
+	InputTokens            int
+	MaxTokens              int
+	ConcurrencyLevels      []int
+	UseRandomInput         bool
+	NumWords               int
+	Headers                map[string]string
+	UseMaxCompletionTokens bool
 }
 
 type BenchmarkResult struct {

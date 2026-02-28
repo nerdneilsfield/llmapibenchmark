@@ -115,16 +115,17 @@ func (benchmark *Benchmark) measureSpeed(latency float64, concurrency int, clear
 	)
 
 	speedMeasurement := utils.SpeedMeasurement{
-		BaseUrl:     benchmark.BaseURL,
-		ApiVersion:  benchmark.ApiVersion,
-		ApiKey:      benchmark.ApiKey,
-		ModelName:   benchmark.ModelName,
-		Prompt:      benchmark.Prompt,
-		NumWords:    benchmark.NumWords,
-		MaxTokens:   benchmark.MaxTokens,
-		Latency:     latency,
-		Concurrency: concurrency,
-		Headers:     benchmark.Headers,
+		BaseUrl:                benchmark.BaseURL,
+		ApiVersion:             benchmark.ApiVersion,
+		ApiKey:                 benchmark.ApiKey,
+		ModelName:              benchmark.ModelName,
+		Prompt:                 benchmark.Prompt,
+		NumWords:               benchmark.NumWords,
+		MaxTokens:              benchmark.MaxTokens,
+		Latency:                latency,
+		Concurrency:            concurrency,
+		Headers:                benchmark.Headers,
+		UseMaxCompletionTokens: benchmark.UseMaxCompletionTokens,
 	}
 	if benchmark.UseRandomInput {
 		speedMeasurement.UseRandomInput = true
