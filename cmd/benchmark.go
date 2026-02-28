@@ -19,8 +19,8 @@ func (benchmark *Benchmark) runCli() error {
 	utils.PrintBenchmarkHeader(benchmark.ModelName, benchmark.InputTokens, benchmark.MaxTokens, latency)
 
 	// Print table header
-	fmt.Println("| Concurrency | Generation Throughput (tokens/s) |  Prompt Throughput (tokens/s) | Min TTFT (s) | Max TTFT (s) | Success Rate | Duration (s) |")
-	fmt.Println("|-------------|----------------------------------|-------------------------------|--------------|--------------|--------------|--------------|")
+	fmt.Println("| C | Gen Speed | Prompt TP | Total TP | Min TTFT | Avg TTFT | Med TTFT | P95 TTFT | P99 TTFT | StdDev | Success | Reqs | Duration |")
+	fmt.Println("|---|-----------|-----------|----------|----------|----------|----------|----------|----------|--------|-------|------|----------|")
 
 	// Test each concurrency level and print results
 	var results [][]interface{}
@@ -31,13 +31,19 @@ func (benchmark *Benchmark) runCli() error {
 		}
 
 		// Print current results
-		fmt.Printf("| %11d | %32.2f | %29.2f | %12.2f | %12.2f | %11.2f%% | %12.2f |\n",
+		fmt.Printf("| %2d | %9.2f | %9.2f | %8.2f | %8.2f | %8.2f | %8.2f | %8.2f | %8.2f | %6.2f | %5.2f%% | %4d | %8.2f |\n",
 			concurrency,
 			result.GenerationSpeed,
 			result.PromptThroughput,
+			result.TotalThroughput,
 			result.MinTtft,
-			result.MaxTtft,
+			result.AvgTtft,
+			result.MedianTtft,
+			result.P95Ttft,
+			result.P99Ttft,
+			result.StdDevTtft,
 			result.SuccessRate*100,
+			result.SuccessfulRequests,
 			result.Duration,
 		)
 
@@ -46,15 +52,21 @@ func (benchmark *Benchmark) runCli() error {
 			concurrency,
 			result.GenerationSpeed,
 			result.PromptThroughput,
+			result.TotalThroughput,
 			result.MinTtft,
-			result.MaxTtft,
+			result.AvgTtft,
+			result.MedianTtft,
+			result.P95Ttft,
+			result.P99Ttft,
+			result.StdDevTtft,
 			result.SuccessRate,
+			result.SuccessfulRequests,
 			result.Duration,
 		})
 	}
 
-	fmt.Println("|-------------|----------------------------------|-------------------------------|--------------|--------------|--------------|--------------|")
-	fmt.Println("\n==============================================================================================================================================")
+	fmt.Println("|---|-----------|-----------|----------|----------|----------|----------|----------|----------|--------|-------|------|----------|")
+	fmt.Println("\n====================================================================================================")
 
 	// Save results to Markdown
 	utils.SaveResultsToMD(results, benchmark.ModelName, benchmark.InputTokens, benchmark.MaxTokens, latency)

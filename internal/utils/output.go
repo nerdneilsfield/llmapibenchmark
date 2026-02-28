@@ -46,24 +46,36 @@ func SaveResultsToMD(results [][]interface{}, modelName string, inputTokens int,
 	file.WriteString(fmt.Sprintf("Output Tokens: %d\n", maxTokens))
 	file.WriteString(fmt.Sprintf("Test Model: %s\n", modelName))
 	file.WriteString(fmt.Sprintf("Latency: %.2f ms\n```\n\n", latency))
-	file.WriteString("| Concurrency | Generation Throughput (tokens/s) |  Prompt Throughput (tokens/s) | Min TTFT (s) | Max TTFT (s) | Success Rate | Duration (s) |\n")
-	file.WriteString("|-------------|----------------------------------|-------------------------------|--------------|--------------|--------------|--------------|\n")
+	file.WriteString("| C | Gen Speed | Prompt TP | Total TP | Min TTFT | Avg TTFT | Med TTFT | P95 TTFT | P99 TTFT | StdDev | Success | Reqs | Duration |\n")
+	file.WriteString("|---|-----------|-----------|----------|----------|----------|----------|----------|----------|--------|-------|------|----------|\n")
 
 	for _, result := range results {
 		concurrency := result[0].(int)
 		generationSpeed := result[1].(float64)
 		promptThroughput := result[2].(float64)
-		minTTFT := result[3].(float64)
-		maxTTFT := result[4].(float64)
-		successRate := result[5].(float64)
-		duration := result[6].(float64)
-		file.WriteString(fmt.Sprintf("| %11d | %32.2f | %29.2f | %12.2f | %12.2f | %11.2f%% | %12.2f |\n",
+		totalThroughput := result[3].(float64)
+		minTTFT := result[4].(float64)
+		avgTTFT := result[5].(float64)
+		medianTTFT := result[6].(float64)
+		p95TTFT := result[7].(float64)
+		p99TTFT := result[8].(float64)
+		stdDevTTFT := result[9].(float64)
+		successRate := result[10].(float64)
+		successfulReqs := result[11].(int)
+		duration := result[12].(float64)
+		file.WriteString(fmt.Sprintf("| %2d | %9.2f | %9.2f | %8.2f | %8.2f | %8.2f | %8.2f | %8.2f | %8.2f | %6.2f | %5.2f%% | %4d | %8.2f |\n",
 			concurrency,
 			generationSpeed,
 			promptThroughput,
+			totalThroughput,
 			minTTFT,
-			maxTTFT,
+			avgTTFT,
+			medianTTFT,
+			p95TTFT,
+			p99TTFT,
+			stdDevTTFT,
 			successRate*100,
+			successfulReqs,
 			duration,
 		))
 	}
